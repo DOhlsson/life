@@ -31,6 +31,13 @@ struct Camera {
 }
 
 impl Camera {
+    pub fn new() -> Camera {
+        return Camera {
+            pos: Point::new(0, 0),
+            float_pos: (0.0, 0.0),
+            zoom: 1.0,
+        };
+    }
     pub fn pos(&self) -> Point {
         return self.pos;
     }
@@ -74,13 +81,8 @@ impl Game {
         let sdl = MySdl::start_sdl();
 
         let mut rng = thread_rng();
-        let mut matrix = Matrix::new(cols, rows);
-
-        let camera = Camera {
-            pos: Point::new(0, 0),
-            float_pos: (0.0, 0.0),
-            zoom: 1.0,
-        };
+        let mut data = Matrix::new(cols, rows);
+        let camera = Camera::new();
 
         let state = GameState {
             paused: false,
@@ -93,7 +95,7 @@ impl Game {
         // Mapgen
         for x in 0..cols {
             for y in 0..rows {
-                matrix.set(x as i32, y as i32, rng.gen_bool(0.5));
+                data.set(x as i32, y as i32, rng.gen_bool(0.5));
             }
         }
 
@@ -101,7 +103,7 @@ impl Game {
             sdl,
             cols,
             rows,
-            data: matrix,
+            data,
             camera,
             state,
         };
@@ -149,7 +151,7 @@ impl Game {
                     self.state.mouse = Point::new(x, y);
 
                     if self.state.movecam {
-                        self.camera.offset(xrel as f32 / self.camera.zoom, yrel as f32 / self.camera.zoom);
+                        self.camera.offset(-xrel as f32 / self.camera.zoom, -yrel as f32 / self.camera.zoom);
                     }
                 }
                 Event::MouseButtonDown { mouse_btn: MouseButton::Right, .. } => {
@@ -165,8 +167,7 @@ impl Game {
 
     // TODO: can this function be made cleaner?
     fn scroll_zoom(camera: &mut Camera, mouse: &Point, scroll: i32) {
-        let mouse_real_x = (-camera.fpos().0) + (mouse.x as f32 / camera.zoom);
-        let mouse_real_y = (-camera.fpos().1) + (mouse.y as f32 / camera.zoom);
+        let prev_zoom = camera.zoom;
 
         if scroll == 1 {
             camera.zoom *= 1.2;
@@ -174,14 +175,10 @@ impl Game {
             camera.zoom /= 1.2;
         }
 
-        let mouse_after_x = (-camera.fpos().0) + (mouse.x as f32 / camera.zoom);
-        let mouse_after_y = (-camera.fpos().1) + (mouse.y as f32 / camera.zoom);
+        let off_x = mouse.x as f32 / prev_zoom - mouse.x as f32 / camera.zoom;
+        let off_y = mouse.y as f32 / prev_zoom - mouse.y as f32 / camera.zoom;
 
-        // can be more effective?
-        let off_x = mouse_real_x - mouse_after_x;
-        let off_y = mouse_real_y - mouse_after_y;
-
-        camera.offset(-off_x, -off_y);
+        camera.offset(off_x, off_y);
     }
 
     pub fn draw(&mut self) {
@@ -192,8 +189,8 @@ impl Game {
             let game_x = (i % self.rows) as i32;
             let game_y = (i / self.cols) as i32;
 
-            let x = game_x * 10 + self.camera.pos().x;
-            let y = game_y * 10 + self.camera.pos().y;
+            let x = game_x * 10 - self.camera.pos().x;
+            let y = game_y * 10 - self.camera.pos().y;
 
             let rect = Rect::new(x, y, 9, 9);
 
