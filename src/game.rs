@@ -29,8 +29,7 @@ pub struct GameState {
     pub running: bool,
     speed: usize,
     movecam: bool,
-    mouse_x: i32,
-    mouse_y: i32,
+    mouse: Point,
 }
 
 impl GameState {
@@ -52,8 +51,7 @@ impl Game {
             speed: 0,
             running: true,
             movecam: false,
-            mouse_x: 0,
-            mouse_y: 0,
+            mouse: Point::new(0, 0),
         };
 
         for x in 0..cols {
@@ -107,11 +105,11 @@ impl Game {
                     }
                 }
                 Event::MouseWheel {y, ..} => {
-                    self.scroll_zoom(&mut self.zoom, &mut self.camera, &mut self.state, y);
+                    Game::scroll_zoom(&mut self.zoom, &mut self.camera, &self.state.mouse, y);
+                    self.sdl.canvas.set_scale(self.zoom, self.zoom).unwrap();
                 }
                 Event::MouseMotion {xrel, yrel, x, y, ..} => {
-                    self.state.mouse_x = x;
-                    self.state.mouse_y = y;
+                    self.state.mouse = Point::new(x, y);
 
                     if self.state.movecam {
                         println!("camera is {} {}", self.camera.x, self.camera.y);
@@ -129,26 +127,25 @@ impl Game {
         }
     }
 
-    fn scroll_zoom(zoom: scroll: i32) {
-        let mouse_real_x = (-self.camera.x) + (self.state.mouse_x as f32 / self.zoom) as i32;
-        let mouse_real_y = (-self.camera.y) + (self.state.mouse_y as f32 / self.zoom) as i32;
+    fn scroll_zoom(zoom: &mut f32, camera: &mut Point, mouse: &Point, scroll: i32) -> Point {
+        println!("mouse {} {}", mouse.x, mouse.y);
+        let mouse_real_x = (-camera.x) + (mouse.x as f32 / *zoom) as i32;
+        let mouse_real_y = (-camera.y) + (mouse.y as f32 / *zoom) as i32;
 
         if scroll == 1 {
-            self.zoom *= 1.1;
+            *zoom *= 1.2;
         } else if scroll == -1 {
-            self.zoom /= 1.1;
+            *zoom /= 1.2;
         }
 
-        self.sdl.canvas.set_scale(self.zoom, self.zoom).unwrap();
-
-        let mouse_after_x = (-self.camera.x) + (self.state.mouse_x as f32 / self.zoom) as i32;
-        let mouse_after_y = (-self.camera.y) + (self.state.mouse_y as f32 / self.zoom) as i32;
+        let mouse_after_x = (-camera.x) + (mouse.x as f32 / *zoom) as i32;
+        let mouse_after_y = (-camera.y) + (mouse.y as f32 / *zoom) as i32;
 
         let off_x = mouse_real_x - mouse_after_x;
         let off_y = mouse_real_y - mouse_after_y;
 
         // Camera is a negative offset
-        self.camera = self.camera.offset(-off_x, -off_y);
+        return camera.offset(-off_x, -off_y);
     }
 
     pub fn draw(&mut self) {

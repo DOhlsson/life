@@ -1,8 +1,9 @@
 
 # TODO
 * renderview
-  * movable
-  * better zoom?
+  * draggable
+  * better zoom, follow mouse
+  * better dragging, follow mouse
 * draw life
 * two matrices
 * render thread
