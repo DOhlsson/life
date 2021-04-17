@@ -19,12 +19,42 @@ pub struct Game {
     cols: usize,
     rows: usize,
     data: Matrix,
-    camera: Point,
-    zoom: f32,
+    camera: Camera,
     pub state: GameState,
 }
 
-// Should this exist? Should it be renamed?
+// TODO: invert pos
+struct Camera {
+    pos: Point,
+    float_pos: (f32, f32),
+    pub zoom: f32,
+}
+
+impl Camera {
+    pub fn pos(&self) -> Point {
+        return self.pos;
+    }
+
+    pub fn fpos(&self) -> (f32, f32) {
+        return self.float_pos;
+    }
+
+    pub fn set(&mut self, x: f32, y: f32) {
+        self.float_pos.0 = x;
+        self.float_pos.1 = y;
+
+        self.pos = Point::new(x as i32, y as i32);
+    }
+
+    pub fn offset(&mut self, x: f32, y: f32) {
+        self.float_pos.0 += x;
+        self.float_pos.1 += y;
+
+        self.pos = Point::new(self.float_pos.0 as i32, self.float_pos.1 as i32);
+    }
+}
+
+// Should this exist? Should it be renamed? GameControls?
 pub struct GameState {
     pub paused: bool,
     pub running: bool,
@@ -45,7 +75,12 @@ impl Game {
 
         let mut rng = thread_rng();
         let mut matrix = Matrix::new(cols, rows);
-        let camera = Point::new(0, 0);
+
+        let camera = Camera {
+            pos: Point::new(0, 0),
+            float_pos: (0.0, 0.0),
+            zoom: 1.0,
+        };
 
         let state = GameState {
             paused: false,
@@ -55,6 +90,7 @@ impl Game {
             mouse: Point::new(0, 0),
         };
 
+        // Mapgen
         for x in 0..cols {
             for y in 0..rows {
                 matrix.set(x as i32, y as i32, rng.gen_bool(0.5));
@@ -67,7 +103,6 @@ impl Game {
             rows,
             data: matrix,
             camera,
-            zoom: 1.0,
             state,
         };
     }
@@ -106,15 +141,15 @@ impl Game {
                     }
                 }
                 Event::MouseWheel {y, ..} => {
-                    self.camera = Game::scroll_zoom(&mut self.zoom, &self.camera, &self.state.mouse, y);
-                    self.sdl.canvas.set_scale(self.zoom, self.zoom).unwrap();
+                    Game::scroll_zoom(&mut self.camera, &self.state.mouse, y);
+                    // self.camera = Game::scroll_zoom(&mut self.zoom, &self.camera, &self.state.mouse, y);
+                    self.sdl.canvas.set_scale(self.camera.zoom, self.camera.zoom).unwrap();
                 }
                 Event::MouseMotion {xrel, yrel, x, y, ..} => {
                     self.state.mouse = Point::new(x, y);
 
                     if self.state.movecam {
-                        println!("camera is {} {}", self.camera.x, self.camera.y);
-                        self.camera = self.camera.offset(xrel, yrel);
+                        self.camera.offset(xrel as f32 / self.camera.zoom, yrel as f32 / self.camera.zoom);
                     }
                 }
                 Event::MouseButtonDown { mouse_btn: MouseButton::Right, .. } => {
@@ -128,24 +163,25 @@ impl Game {
         }
     }
 
-    fn scroll_zoom(zoom: &mut f32, camera: &Point, mouse: &Point, scroll: i32) -> Point {
-        let mouse_real_x = (-camera.x) + (mouse.x as f32 / *zoom) as i32;
-        let mouse_real_y = (-camera.y) + (mouse.y as f32 / *zoom) as i32;
+    // TODO: can this function be made cleaner?
+    fn scroll_zoom(camera: &mut Camera, mouse: &Point, scroll: i32) {
+        let mouse_real_x = (-camera.fpos().0) + (mouse.x as f32 / camera.zoom);
+        let mouse_real_y = (-camera.fpos().1) + (mouse.y as f32 / camera.zoom);
 
         if scroll == 1 {
-            *zoom *= 1.2;
+            camera.zoom *= 1.2;
         } else if scroll == -1 {
-            *zoom /= 1.2;
+            camera.zoom /= 1.2;
         }
 
-        let mouse_after_x = (-camera.x) + (mouse.x as f32 / *zoom) as i32;
-        let mouse_after_y = (-camera.y) + (mouse.y as f32 / *zoom) as i32;
+        let mouse_after_x = (-camera.fpos().0) + (mouse.x as f32 / camera.zoom);
+        let mouse_after_y = (-camera.fpos().1) + (mouse.y as f32 / camera.zoom);
 
+        // can be more effective?
         let off_x = mouse_real_x - mouse_after_x;
         let off_y = mouse_real_y - mouse_after_y;
 
-        // Camera is a negative offset
-        return camera.offset(-off_x, -off_y);
+        camera.offset(-off_x, -off_y);
     }
 
     pub fn draw(&mut self) {
@@ -156,8 +192,8 @@ impl Game {
             let game_x = (i % self.rows) as i32;
             let game_y = (i / self.cols) as i32;
 
-            let x = game_x * 10 + self.camera.x;
-            let y = game_y * 10 + self.camera.y;
+            let x = game_x * 10 + self.camera.pos().x;
+            let y = game_y * 10 + self.camera.pos().y;
 
             let rect = Rect::new(x, y, 9, 9);
 
