@@ -24,6 +24,7 @@ pub struct Game {
     pub state: GameState,
 }
 
+// Should this exist? Should it be renamed?
 pub struct GameState {
     pub paused: bool,
     pub running: bool,
@@ -105,7 +106,7 @@ impl Game {
                     }
                 }
                 Event::MouseWheel {y, ..} => {
-                    Game::scroll_zoom(&mut self.zoom, &mut self.camera, &self.state.mouse, y);
+                    self.camera = Game::scroll_zoom(&mut self.zoom, &self.camera, &self.state.mouse, y);
                     self.sdl.canvas.set_scale(self.zoom, self.zoom).unwrap();
                 }
                 Event::MouseMotion {xrel, yrel, x, y, ..} => {
@@ -127,8 +128,7 @@ impl Game {
         }
     }
 
-    fn scroll_zoom(zoom: &mut f32, camera: &mut Point, mouse: &Point, scroll: i32) -> Point {
-        println!("mouse {} {}", mouse.x, mouse.y);
+    fn scroll_zoom(zoom: &mut f32, camera: &Point, mouse: &Point, scroll: i32) -> Point {
         let mouse_real_x = (-camera.x) + (mouse.x as f32 / *zoom) as i32;
         let mouse_real_y = (-camera.y) + (mouse.y as f32 / *zoom) as i32;
 
