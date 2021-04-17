@@ -31,7 +31,7 @@ pub fn run(game: &mut Game) {
 
             let time_all = t1.elapsed().as_millis();
 
-            println!("draw:{:4}    tick:{:4}    all:{:4}", time_draw, time_tick, time_all);
+            // println!("draw:{:4}    tick:{:4}    all:{:4}", time_draw, time_tick, time_all);
         }
 
         std::thread::sleep(std::time::Duration::from_millis(game.state.speed()));
