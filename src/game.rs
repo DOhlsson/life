@@ -1,18 +1,18 @@
-use crate::mysdl::MySdl;
 use crate::matrix::Matrix;
+use crate::mysdl::MySdl;
 
-use sdl2::pixels::Color;
-use sdl2::rect::{Rect, Point};
 use sdl2::event::Event;
 use sdl2::event::WindowEvent;
 use sdl2::keyboard::Keycode;
 use sdl2::mouse::MouseButton;
+use sdl2::pixels::Color;
+use sdl2::rect::{Point, Rect};
 
 use rand::{thread_rng, Rng};
 
 const ALIVE: Color = Color::RGB(0xEE, 0xEE, 0xEE);
-const DEAD: Color  = Color::RGB(0x11, 0x11, 0x11);
-const SPEEDS: [u64; 5]  = [0, 100, 500, 1000, 5000];
+const DEAD: Color = Color::RGB(0x11, 0x11, 0x11);
+const SPEEDS: [u64; 5] = [0, 100, 500, 1000, 5000];
 
 pub struct Game {
     sdl: MySdl,
@@ -112,16 +112,26 @@ impl Game {
     pub fn handle_events(&mut self) {
         for event in self.sdl.event_pump.poll_iter() {
             match event {
-                Event::Quit{..} | Event::KeyDown {keycode: Some(Keycode::Escape), ..} => {
+                Event::Quit { .. }
+                | Event::KeyDown {
+                    keycode: Some(Keycode::Escape),
+                    ..
+                } => {
                     println!("Bye!");
                     self.state.running = false;
                 }
-                Event::Window {win_event: WindowEvent::Resized(new_w, new_h), ..} => {
+                Event::Window {
+                    win_event: WindowEvent::Resized(new_w, new_h),
+                    ..
+                } => {
                     println!("Resized {} {}", new_w, new_h);
                     // sdl.scr_w = new_w as usize;
                     // sdl.scr_h = new_h as usize;
                 }
-                Event::KeyDown {keycode: Some(Keycode::P), ..} => {
+                Event::KeyDown {
+                    keycode: Some(Keycode::P),
+                    ..
+                } => {
                     self.state.paused = !self.state.paused;
 
                     if self.state.paused {
@@ -130,34 +140,54 @@ impl Game {
                         println!("Unpaused");
                     }
                 }
-                Event::KeyDown {keycode: Some(Keycode::Plus), ..} => {
+                Event::KeyDown {
+                    keycode: Some(Keycode::Plus),
+                    ..
+                } => {
                     if self.state.speed > 0 {
                         self.state.speed -= 1;
                         println!("New speed {}", self.state.speed());
                     }
                 }
-                Event::KeyDown {keycode: Some(Keycode::Minus), ..} => {
+                Event::KeyDown {
+                    keycode: Some(Keycode::Minus),
+                    ..
+                } => {
                     if self.state.speed < 4 {
                         self.state.speed += 1;
                         println!("New speed {}", self.state.speed());
                     }
                 }
-                Event::MouseWheel {y, ..} => {
+                Event::MouseWheel { y, .. } => {
                     Game::scroll_zoom(&mut self.camera, &self.state.mouse, y);
                     // self.camera = Game::scroll_zoom(&mut self.zoom, &self.camera, &self.state.mouse, y);
-                    self.sdl.canvas.set_scale(self.camera.zoom, self.camera.zoom).unwrap();
+                    self.sdl
+                        .canvas
+                        .set_scale(self.camera.zoom, self.camera.zoom)
+                        .unwrap();
                 }
-                Event::MouseMotion {xrel, yrel, x, y, ..} => {
+                Event::MouseMotion {
+                    xrel, yrel, x, y, ..
+                } => {
                     self.state.mouse = Point::new(x, y);
 
                     if self.state.movecam {
-                        self.camera.offset(-xrel as f32 / self.camera.zoom, -yrel as f32 / self.camera.zoom);
+                        self.camera.offset(
+                            -xrel as f32 / self.camera.zoom,
+                            -yrel as f32 / self.camera.zoom,
+                        );
                     }
                 }
-                Event::MouseButtonDown { mouse_btn: MouseButton::Right, .. } => {
+                Event::MouseButtonDown {
+                    mouse_btn: MouseButton::Right,
+                    ..
+                } => {
                     self.state.movecam = true;
                 }
-                Event::MouseButtonUp { mouse_btn: MouseButton::Right, .. } => {
+                Event::MouseButtonUp {
+                    mouse_btn: MouseButton::Right,
+                    ..
+                } => {
                     self.state.movecam = false;
                 }
                 _ => {}
@@ -217,16 +247,16 @@ impl Game {
                 let mut sum = 0;
                 let alive = self.data.get(x, y);
 
-                sum += self.data.get(x+1, y+1) as i32;
-                sum += self.data.get(x, y+1) as i32;
-                sum += self.data.get(x-1, y+1) as i32;
+                sum += self.data.get(x + 1, y + 1) as i32;
+                sum += self.data.get(x, y + 1) as i32;
+                sum += self.data.get(x - 1, y + 1) as i32;
 
-                sum += self.data.get(x+1, y) as i32;
-                sum += self.data.get(x-1, y) as i32;
+                sum += self.data.get(x + 1, y) as i32;
+                sum += self.data.get(x - 1, y) as i32;
 
-                sum += self.data.get(x+1, y-1) as i32;
-                sum += self.data.get(x, y-1) as i32;
-                sum += self.data.get(x-1, y-1) as i32;
+                sum += self.data.get(x + 1, y - 1) as i32;
+                sum += self.data.get(x, y - 1) as i32;
+                sum += self.data.get(x - 1, y - 1) as i32;
 
                 if alive && sum >= 2 && sum <= 3 {
                     new_matrix.set(x, y, true);

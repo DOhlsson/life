@@ -1,4 +1,3 @@
-
 pub struct Matrix {
     cols: usize,
     rows: usize,

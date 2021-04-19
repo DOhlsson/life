@@ -1,4 +1,3 @@
-
 const SCREEN_W: usize = 800;
 const SCREEN_H: usize = 600;
 
