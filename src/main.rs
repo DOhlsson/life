@@ -16,10 +16,10 @@ pub fn main() {
 pub fn run(game: &mut Game) {
     println!("Hello world!");
 
-    while game.state.running {
+    while game.running {
         game.handle_events();
 
-        if !game.state.paused {
+        if !game.paused {
             let t1 = Instant::now();
             game.draw();
             let time_draw = t1.elapsed().as_millis();
@@ -36,6 +36,6 @@ pub fn run(game: &mut Game) {
             );
         }
 
-        std::thread::sleep(std::time::Duration::from_millis(game.state.speed()));
+        std::thread::sleep(std::time::Duration::from_millis(game.speed()));
     }
 }

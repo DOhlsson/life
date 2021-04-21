@@ -10,6 +10,8 @@ use sdl2::rect::{Point, Rect};
 
 use rand::{thread_rng, Rng};
 
+use std::rc::Rc;
+
 const ALIVE: Color = Color::RGB(0xEE, 0xEE, 0xEE);
 const DEAD: Color = Color::RGB(0x11, 0x11, 0x11);
 const SPEEDS: [u64; 5] = [0, 100, 500, 1000, 5000];
@@ -18,9 +20,12 @@ pub struct Game {
     sdl: MySdl,
     cols: usize,
     rows: usize,
-    data: Matrix,
+    data: Rc<Matrix>,
+    next_data: Rc<Matrix>,
     camera: Camera,
-    pub state: GameState,
+    controls: Controls,
+    pub paused: bool,
+    pub running: bool,
 }
 
 // TODO: invert pos
@@ -28,6 +33,12 @@ struct Camera {
     pos: Point,
     float_pos: (f32, f32),
     pub zoom: f32,
+}
+
+pub struct Controls {
+    speed: usize,
+    movecam: bool,
+    mouse: Point,
 }
 
 impl Camera {
@@ -61,16 +72,7 @@ impl Camera {
     }
 }
 
-// Should this exist? Should it be renamed? GameControls?
-pub struct GameState {
-    pub paused: bool,
-    pub running: bool,
-    speed: usize,
-    movecam: bool,
-    mouse: Point,
-}
-
-impl GameState {
+impl Controls {
     pub fn speed(&self) -> u64 {
         return SPEEDS[self.speed];
     }
@@ -82,12 +84,11 @@ impl Game {
 
         let mut rng = thread_rng();
         let mut data = Matrix::new(cols, rows);
+        let mut next_data = Matrix::new(cols, rows);
         let camera = Camera::new();
 
-        let state = GameState {
-            paused: false,
+        let controls = Controls {
             speed: 0,
-            running: true,
             movecam: false,
             mouse: Point::new(0, 0),
         };
@@ -103,10 +104,17 @@ impl Game {
             sdl,
             cols,
             rows,
-            data,
+            data: Rc::new(data),
+            next_data: Rc::new(next_data),
             camera,
-            state,
+            controls,
+            paused: false,
+            running: true,
         };
+    }
+
+    pub fn speed(&self) -> u64 {
+        return self.controls.speed();
     }
 
     pub fn handle_events(&mut self) {
@@ -118,7 +126,7 @@ impl Game {
                     ..
                 } => {
                     println!("Bye!");
-                    self.state.running = false;
+                    self.running = false;
                 }
                 Event::Window {
                     win_event: WindowEvent::Resized(new_w, new_h),
@@ -132,9 +140,9 @@ impl Game {
                     keycode: Some(Keycode::P),
                     ..
                 } => {
-                    self.state.paused = !self.state.paused;
+                    self.paused = !self.paused;
 
-                    if self.state.paused {
+                    if self.paused {
                         println!("Paused");
                     } else {
                         println!("Unpaused");
@@ -144,22 +152,22 @@ impl Game {
                     keycode: Some(Keycode::Plus),
                     ..
                 } => {
-                    if self.state.speed > 0 {
-                        self.state.speed -= 1;
-                        println!("New speed {}", self.state.speed());
+                    if self.controls.speed > 0 {
+                        self.controls.speed -= 1;
+                        println!("New speed {}", self.controls.speed());
                     }
                 }
                 Event::KeyDown {
                     keycode: Some(Keycode::Minus),
                     ..
                 } => {
-                    if self.state.speed < 4 {
-                        self.state.speed += 1;
-                        println!("New speed {}", self.state.speed());
+                    if self.controls.speed < 4 {
+                        self.controls.speed += 1;
+                        println!("New speed {}", self.controls.speed());
                     }
                 }
                 Event::MouseWheel { y, .. } => {
-                    Game::scroll_zoom(&mut self.camera, &self.state.mouse, y);
+                    Game::scroll_zoom(&mut self.camera, &self.controls.mouse, y);
                     // self.camera = Game::scroll_zoom(&mut self.zoom, &self.camera, &self.state.mouse, y);
                     self.sdl
                         .canvas
@@ -169,9 +177,9 @@ impl Game {
                 Event::MouseMotion {
                     xrel, yrel, x, y, ..
                 } => {
-                    self.state.mouse = Point::new(x, y);
+                    self.controls.mouse = Point::new(x, y);
 
-                    if self.state.movecam {
+                    if self.controls.movecam {
                         self.camera.offset(
                             -xrel as f32 / self.camera.zoom,
                             -yrel as f32 / self.camera.zoom,
@@ -182,13 +190,13 @@ impl Game {
                     mouse_btn: MouseButton::Right,
                     ..
                 } => {
-                    self.state.movecam = true;
+                    self.controls.movecam = true;
                 }
                 Event::MouseButtonUp {
                     mouse_btn: MouseButton::Right,
                     ..
                 } => {
-                    self.state.movecam = false;
+                    self.controls.movecam = false;
                 }
                 _ => {}
             }
@@ -237,7 +245,7 @@ impl Game {
     }
 
     pub fn tick(&mut self) {
-        let mut new_matrix = Matrix::new(self.cols, self.rows);
+        let next_data = Rc::get_mut(&mut self.next_data).unwrap();
 
         for x in 0..self.cols {
             for y in 0..self.rows {
@@ -259,15 +267,17 @@ impl Game {
                 sum += self.data.get(x - 1, y - 1) as i32;
 
                 if alive && sum >= 2 && sum <= 3 {
-                    new_matrix.set(x, y, true);
+                    next_data.set(x, y, true);
                 } else if !alive && sum == 3 {
-                    new_matrix.set(x, y, true);
+                    next_data.set(x, y, true);
                 } else {
-                    new_matrix.set(x, y, false);
+                    next_data.set(x, y, false);
                 }
             }
         }
 
-        self.data = new_matrix;
+        let old_data = self.data.clone();
+        self.data = self.next_data.clone();
+        self.next_data = old_data;
     }
 }
