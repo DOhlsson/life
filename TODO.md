@@ -1,19 +1,23 @@
 
 # TODO
-* renderview
-  * draggable
-  * better zoom, follow mouse
-  * better dragging, follow mouse
-* fix accidental toroidness
+* efficient render
+* remove barriers
+  * make render and controls independent of game speed
+* fps lock (60, 144, monitor based?)
+* fix crash on exit
 * draw life
-* two matrices
-* render thread
-* event loop thread
-* multi thread
+* fix accidental toroidness
 * sparse matrix
+* multi thread ticks
 * gtk window
 
 
 
 # DONE
 * matrix implementation
+* renderview
+  * draggable
+  * better zoom, follow mouse
+  * better dragging, follow mouse
+* two matrices
+* render thread
