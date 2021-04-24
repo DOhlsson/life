@@ -13,7 +13,6 @@ pub struct MySdl {
     pub scale: f32,
 }
 
-// TODO: invert pos
 pub struct Camera {
     pos: Point,
     float_pos: (f32, f32),
@@ -89,8 +88,8 @@ impl Camera {
             self.zoom /= 1.2;
         }
 
-        let off_x = mouse.x as f32 / prev_zoom - mouse.x as f32 / self.zoom;
-        let off_y = mouse.y as f32 / prev_zoom - mouse.y as f32 / self.zoom;
+        let off_x =  mouse.x as f32 / self.zoom - mouse.x as f32 / prev_zoom;
+        let off_y =  mouse.y as f32 / self.zoom - mouse.y as f32 / prev_zoom;
 
         self.offset(off_x, off_y);
     }
