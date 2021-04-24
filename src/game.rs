@@ -101,8 +101,8 @@ impl Game {
                     ..
                 } => {
                     println!("Resized {} {}", new_w, new_h);
-                    // sdl.scr_w = new_w as usize;
-                    // sdl.scr_h = new_h as usize;
+                    sdl.scr_w = new_w as usize;
+                    sdl.scr_h = new_h as usize;
                 }
                 Event::KeyDown {
                     keycode: Some(Keycode::P),
@@ -175,22 +175,32 @@ impl Game {
 
         let state = self.state.read().unwrap();
 
+        let camera_pos = sdl.camera.pos();
+
+        let scr_w = (sdl.scr_w as f32 / sdl.camera.zoom) as i32;
+        let scr_h = (sdl.scr_h as f32 / sdl.camera.zoom) as i32;
+
+        println!("camera_pos {} {}", camera_pos.x, camera_pos.y);
+
         for (i, b) in state.data.get_iter().enumerate() {
             let game_x = (i % self.rows) as i32;
             let game_y = (i / self.cols) as i32;
 
-            let x = game_x * 10 - sdl.camera.pos().x;
-            let y = game_y * 10 - sdl.camera.pos().y;
+            let x = game_x * 10 - camera_pos.x;
+            let y = game_y * 10 - camera_pos.y;
 
-            let rect = Rect::new(x, y, 9, 9);
+            if x >= -10 && y >= -10 && x <= scr_w && y <= scr_h {
 
-            if *b {
-                sdl.canvas.set_draw_color(ALIVE);
-            } else {
-                sdl.canvas.set_draw_color(DEAD);
+                let rect = Rect::new(x, y, 9, 9);
+
+                if *b {
+                    sdl.canvas.set_draw_color(ALIVE);
+                } else {
+                    sdl.canvas.set_draw_color(DEAD);
+                }
+
+                sdl.canvas.fill_rect(rect).unwrap();
             }
-
-            sdl.canvas.fill_rect(rect).unwrap();
         }
 
         sdl.canvas.present();
