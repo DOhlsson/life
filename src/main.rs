@@ -56,7 +56,7 @@ pub fn main() {
         println!("Draw took {}", time_draw);
 
         if !game.controls().running {
-          break;
+            break;
         }
 
         game.handle_events(&mut sdl);
@@ -65,7 +65,6 @@ pub fn main() {
 
         let time_all = timer.elapsed().as_millis();
         println!("All took {}", time_all);
-
 
         // TODO: limit to 60 fps
     }

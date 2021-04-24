@@ -94,5 +94,4 @@ impl Camera {
 
         self.offset(off_x, off_y);
     }
-
 }

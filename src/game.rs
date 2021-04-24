@@ -190,7 +190,6 @@ impl Game {
             let y = game_y * 10 - camera_pos.y;
 
             if x >= -10 && y >= -10 && x <= scr_w && y <= scr_h {
-
                 let rect = Rect::new(x, y, 9, 9);
 
                 if *b {
