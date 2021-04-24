@@ -6,6 +6,7 @@ mod mysdl;
 
 use crate::mysdl::MySdl;
 use game::Game;
+use sdl2::gfx::framerate::FPSManager;
 use std::sync::{Arc, Barrier};
 use std::thread;
 use std::time::Instant;
@@ -14,6 +15,17 @@ pub fn main() {
     println!("Hello world!");
 
     let mut sdl = MySdl::start_sdl();
+    let display_index = sdl.canvas.window().display_index().unwrap();
+    let framerate = sdl
+        .video
+        .current_display_mode(display_index)
+        .unwrap()
+        .refresh_rate;
+
+    println!("Target fps: {}", framerate);
+
+    let mut fps = FPSManager::new();
+    fps.set_framerate(framerate as u32).unwrap();
 
     let game = Arc::new(Game::new(1000, 1000));
     let game_clone = game.clone();
@@ -64,8 +76,8 @@ pub fn main() {
         // barrier.wait(); // lockstep
 
         let time_all = timer.elapsed().as_millis();
-        println!("All took {}", time_all);
+        println!("All took {}\n", time_all);
 
-        // TODO: limit to 60 fps
+        fps.delay();
     }
 }

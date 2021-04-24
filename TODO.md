@@ -1,9 +1,6 @@
 
 # TODO
-* efficient render
-* remove barriers
-  * make render and controls independent of game speed
-* fps lock (60, 144, monitor based?)
+* lockstep option
 * fix crash on exit
 * draw life
 * fix accidental toroidness
@@ -14,6 +11,9 @@
 
 
 # DONE
+* fps lock, monitor based
+* efficient render
+  * make render and controls independent of game speed
 * matrix implementation
 * renderview
   * draggable

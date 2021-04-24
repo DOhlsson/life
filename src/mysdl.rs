@@ -6,6 +6,7 @@ use sdl2::rect::Point;
 pub struct MySdl {
     pub context: sdl2::Sdl,
     pub event_pump: sdl2::EventPump,
+    pub video: sdl2::VideoSubsystem,
     pub canvas: sdl2::render::WindowCanvas,
     pub camera: Camera,
     pub scr_w: usize,
@@ -24,10 +25,10 @@ impl MySdl {
     pub fn start_sdl() -> MySdl {
         let context = sdl2::init().unwrap();
         let event_pump = context.event_pump().unwrap();
-        let video_subsystem = context.video().unwrap();
+        let video = context.video().unwrap();
         let camera = Camera::new();
 
-        let window = video_subsystem
+        let window = video
             .window("rust-sdl2 demo", SCREEN_W as u32, SCREEN_H as u32)
             .position_centered()
             .resizable()
@@ -40,6 +41,7 @@ impl MySdl {
         return MySdl {
             context,
             event_pump,
+            video,
             canvas,
             camera,
             scr_w: SCREEN_W,
