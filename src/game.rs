@@ -12,7 +12,14 @@ use std::sync::{Arc, Mutex, MutexGuard, RwLock};
 
 const ALIVE: Color = Color::RGB(0xEE, 0xEE, 0xEE);
 const DEAD: Color = Color::RGB(0x11, 0x11, 0x11);
-const SPEEDS: [u64; 5] = [0, 100, 500, 1000, 5000];
+const SPEEDS: [Speed; 6] = [
+    Speed::Unlimited,
+    Speed::Lockstep,
+    Speed::Limited(100),
+    Speed::Limited(500),
+    Speed::Limited(1000),
+    Speed::Limited(5000),
+];
 
 pub struct Game {
     cols: usize,
@@ -26,16 +33,24 @@ pub struct GameState {
     next_data: Mutex<Arc<Matrix>>,
 }
 
+#[derive(Copy, Clone)]
 pub struct Controls {
     pub running: bool,
     pub paused: bool,
-    speed: usize,
     movecam: bool,
+    speed: usize,
     mouse: Point,
 }
 
+#[derive(Copy, Clone, Debug)]
+pub enum Speed {
+    Unlimited,
+    Lockstep,
+    Limited(u64),
+}
+
 impl Controls {
-    pub fn speed(&self) -> u64 {
+    pub fn speed(&self) -> Speed {
         return SPEEDS[self.speed];
     }
 }
@@ -49,8 +64,8 @@ impl Game {
         let controls = Controls {
             running: true,
             paused: false,
-            speed: 0,
             movecam: false,
+            speed: 0,
             mouse: Point::new(0, 0),
         };
 
@@ -74,17 +89,19 @@ impl Game {
         };
     }
 
-    pub fn speed(&self) -> u64 {
-        let controls = self.controls.lock().unwrap();
-        return controls.speed();
-    }
-
-    pub fn controls(&self) -> MutexGuard<'_, Controls> {
+    pub fn controls_as_mutex(&self) -> MutexGuard<'_, Controls> {
         return self.controls.lock().unwrap();
     }
 
+    pub fn controls_as_copy(&self) -> Controls {
+        let mutex_lock = self.controls.lock().unwrap();
+        let controls_copy: Controls = *mutex_lock;
+        drop(mutex_lock);
+        return controls_copy;
+    }
+
     pub fn handle_events(&self, sdl: &mut MySdl) {
-        let mut controls = self.controls();
+        let mut controls = self.controls_as_mutex();
 
         for event in sdl.event_pump.poll_iter() {
             match event {
@@ -103,36 +120,6 @@ impl Game {
                     println!("Resized {} {}", new_w, new_h);
                     sdl.scr_w = new_w as usize;
                     sdl.scr_h = new_h as usize;
-                }
-                Event::KeyDown {
-                    keycode: Some(Keycode::P),
-                    ..
-                } => {
-                    controls.paused = !controls.paused;
-
-                    if controls.paused {
-                        println!("Paused");
-                    } else {
-                        println!("Unpaused");
-                    }
-                }
-                Event::KeyDown {
-                    keycode: Some(Keycode::Plus),
-                    ..
-                } => {
-                    if controls.speed > 0 {
-                        controls.speed -= 1;
-                        println!("New speed {}", controls.speed());
-                    }
-                }
-                Event::KeyDown {
-                    keycode: Some(Keycode::Minus),
-                    ..
-                } => {
-                    if controls.speed < 4 {
-                        controls.speed += 1;
-                        println!("New speed {}", controls.speed());
-                    }
                 }
                 Event::MouseWheel { y, .. } => {
                     sdl.camera.scroll_zoom(&controls.mouse, y);
@@ -164,6 +151,32 @@ impl Game {
                 } => {
                     controls.movecam = false;
                 }
+                Event::KeyDown {
+                    keycode: Some(keycode),
+                    ..
+                } => match keycode {
+                    Keycode::P => {
+                        controls.paused = !controls.paused;
+                        if controls.paused {
+                            println!("Paused");
+                        } else {
+                            println!("Unpaused");
+                        }
+                    }
+                    Keycode::Plus => {
+                        if controls.speed > 0 {
+                            controls.speed -= 1;
+                            println!("New speed {:?}", controls.speed());
+                        }
+                    }
+                    Keycode::Minus => {
+                        if controls.speed < 4 {
+                            controls.speed += 1;
+                            println!("New speed {:?}", controls.speed());
+                        }
+                    }
+                    _ => {}
+                },
                 _ => {}
             }
         }

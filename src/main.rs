@@ -6,10 +6,11 @@ mod mysdl;
 
 use crate::mysdl::MySdl;
 use game::Game;
+use game::Speed;
 use sdl2::gfx::framerate::FPSManager;
 use std::sync::{Arc, Barrier};
 use std::thread;
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 pub fn main() {
     println!("Hello world!");
@@ -38,45 +39,52 @@ pub fn main() {
         let barrier = barrier_clone;
 
         loop {
-            let paused = game.controls().paused;
+            let controls = game.controls_as_copy();
 
-            std::thread::sleep(std::time::Duration::from_millis(game.speed()));
-
-            if !game.controls().running {
+            if !controls.running {
                 break;
             }
 
-            if !paused {
+            if !controls.paused {
                 let timer_tick = Instant::now();
                 game.tick();
                 let time_tick = timer_tick.elapsed().as_millis();
                 println!("Tick took {}", time_tick);
-            }
-
-            if !paused {
                 game.finalize_tick();
             }
 
-            // barrier.wait(); // lockstep
+            match controls.speed() {
+                Speed::Unlimited => {}
+                Speed::Lockstep => {
+                    barrier.wait();
+                }
+                Speed::Limited(limit) => {
+                    thread::sleep(Duration::from_millis(limit));
+                }
+            }
         }
     });
 
     loop {
+        let controls = game.controls_as_copy();
+
+        if !controls.running {
+            break;
+        }
+
         let timer = Instant::now();
         game.draw(&mut sdl);
         let time_draw = timer.elapsed().as_millis();
         println!("Draw took {}", time_draw);
 
-        if !game.controls().running {
-            break;
-        }
-
         game.handle_events(&mut sdl);
 
-        // barrier.wait(); // lockstep
-
-        let time_all = timer.elapsed().as_millis();
-        println!("All took {}\n", time_all);
+        match controls.speed() {
+            Speed::Lockstep => {
+                barrier.wait();
+            }
+            _ => {}
+        }
 
         fps.delay();
     }

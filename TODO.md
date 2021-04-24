@@ -1,7 +1,5 @@
 
 # TODO
-* lockstep option
-* fix crash on exit
 * draw life
 * fix accidental toroidness
 * sparse matrix
@@ -11,6 +9,7 @@
 
 
 # DONE
+* lockstep option
 * fps lock, monitor based
 * efficient render
   * make render and controls independent of game speed
