@@ -8,7 +8,7 @@ use sdl2::keyboard::Keycode;
 use sdl2::mouse::MouseButton;
 use sdl2::pixels::Color;
 use sdl2::rect::{Point, Rect};
-use std::sync::{Arc, Mutex, MutexGuard};
+use std::sync::{Arc, Mutex, MutexGuard, RwLock};
 
 const ALIVE: Color = Color::RGB(0xEE, 0xEE, 0xEE);
 const DEAD: Color = Color::RGB(0x11, 0x11, 0x11);
@@ -17,9 +17,13 @@ const SPEEDS: [u64; 5] = [0, 100, 500, 1000, 5000];
 pub struct Game {
     cols: usize,
     rows: usize,
+    state: RwLock<GameState>,
+    controls: Mutex<Controls>,
+}
+
+pub struct GameState {
     data: Arc<Matrix>,
     next_data: Mutex<Arc<Matrix>>,
-    controls: Mutex<Controls>,
 }
 
 pub struct Controls {
@@ -57,11 +61,15 @@ impl Game {
             }
         }
 
+        let state = GameState {
+            data: Arc::new(data),
+            next_data: Mutex::new(Arc::new(next_data)),
+        };
+
         return Game {
             cols,
             rows,
-            data: Arc::new(data),
-            next_data: Mutex::new(Arc::new(next_data)),
+            state: RwLock::new(state),
             controls: Mutex::new(controls),
         };
     }
@@ -165,7 +173,9 @@ impl Game {
         sdl.canvas.set_draw_color(Color::BLACK);
         sdl.canvas.clear(); // investigate this
 
-        for (i, b) in self.data.get_iter().enumerate() {
+        let state = self.state.read().unwrap();
+
+        for (i, b) in state.data.get_iter().enumerate() {
             let game_x = (i % self.rows) as i32;
             let game_y = (i / self.cols) as i32;
 
@@ -187,7 +197,8 @@ impl Game {
     }
 
     pub fn tick(&self) {
-        let mut next_data = self.next_data.lock().unwrap();
+        let state = self.state.read().unwrap();
+        let mut next_data = state.next_data.lock().unwrap();
         let next_data = Arc::get_mut(&mut next_data).unwrap();
 
         for x in 0..self.cols {
@@ -196,18 +207,18 @@ impl Game {
                 let y = y as i32;
 
                 let mut sum = 0;
-                let alive = self.data.get(x, y);
+                let alive = state.data.get(x, y);
 
-                sum += self.data.get(x + 1, y + 1) as i32;
-                sum += self.data.get(x, y + 1) as i32;
-                sum += self.data.get(x - 1, y + 1) as i32;
+                sum += state.data.get(x + 1, y + 1) as i32;
+                sum += state.data.get(x, y + 1) as i32;
+                sum += state.data.get(x - 1, y + 1) as i32;
 
-                sum += self.data.get(x + 1, y) as i32;
-                sum += self.data.get(x - 1, y) as i32;
+                sum += state.data.get(x + 1, y) as i32;
+                sum += state.data.get(x - 1, y) as i32;
 
-                sum += self.data.get(x + 1, y - 1) as i32;
-                sum += self.data.get(x, y - 1) as i32;
-                sum += self.data.get(x - 1, y - 1) as i32;
+                sum += state.data.get(x + 1, y - 1) as i32;
+                sum += state.data.get(x, y - 1) as i32;
+                sum += state.data.get(x - 1, y - 1) as i32;
 
                 if alive && sum >= 2 && sum <= 3 {
                     next_data.set(x, y, true);
@@ -222,10 +233,19 @@ impl Game {
         drop(next_data);
     }
 
-    pub fn finalize_tick(&mut self) {
-        let mut next_data = self.next_data.lock().unwrap();
-        let new_data = next_data.clone();
-        *next_data = self.data.clone();
-        self.data = new_data;
+    pub fn finalize_tick(&self) {
+        let mut state = self.state.write().unwrap();
+
+        // Acquire a MutexGuard for next_data
+        // this also acquires an immutable borrow of state, we must drop this later
+        let mut next_data = state.next_data.lock().unwrap();
+
+        let new_data = next_data.clone(); // clone for later
+
+        *next_data = state.data.clone(); // write the cloned Arc of state.data into the next_data mutex
+
+        drop(next_data); // drops the immutable borrow of state
+
+        state.data = new_data;
     }
 }
