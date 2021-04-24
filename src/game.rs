@@ -147,8 +147,8 @@ impl Game {
 
                     if controls.movecam {
                         sdl.camera.offset(
-                            xrel as f32 / sdl.camera.zoom,
-                            yrel as f32 / sdl.camera.zoom,
+                            -xrel as f32 / sdl.camera.zoom,
+                            -yrel as f32 / sdl.camera.zoom,
                         );
                     }
                 }
@@ -179,8 +179,8 @@ impl Game {
             let game_x = (i % self.rows) as i32;
             let game_y = (i / self.cols) as i32;
 
-            let x = game_x * 10 + sdl.camera.pos().x;
-            let y = game_y * 10 + sdl.camera.pos().y;
+            let x = game_x * 10 - sdl.camera.pos().x;
+            let y = game_y * 10 - sdl.camera.pos().y;
 
             let rect = Rect::new(x, y, 9, 9);
 
