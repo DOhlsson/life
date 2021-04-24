@@ -12,13 +12,12 @@ use std::sync::{Arc, Mutex, MutexGuard, RwLock};
 
 const ALIVE: Color = Color::RGB(0xEE, 0xEE, 0xEE);
 const DEAD: Color = Color::RGB(0x11, 0x11, 0x11);
-const SPEEDS: [Speed; 6] = [
+const SPEEDS: [Speed; 5] = [
     Speed::Unlimited,
     Speed::Lockstep,
     Speed::Limited(100),
     Speed::Limited(500),
     Speed::Limited(1000),
-    Speed::Limited(5000),
 ];
 
 pub struct Game {
@@ -38,6 +37,7 @@ pub struct Controls {
     pub running: bool,
     pub paused: bool,
     movecam: bool,
+    drawing: Option<bool>,
     speed: usize,
     mouse: Point,
 }
@@ -65,6 +65,7 @@ impl Game {
             running: true,
             paused: false,
             movecam: false,
+            drawing: None,
             speed: 0,
             mouse: Point::new(0, 0),
         };
@@ -139,18 +140,34 @@ impl Game {
                         );
                     }
                 }
-                Event::MouseButtonDown {
-                    mouse_btn: MouseButton::Right,
-                    ..
-                } => {
-                    controls.movecam = true;
-                }
-                Event::MouseButtonUp {
-                    mouse_btn: MouseButton::Right,
-                    ..
-                } => {
-                    controls.movecam = false;
-                }
+                Event::MouseButtonDown { mouse_btn, .. } => match mouse_btn {
+                    MouseButton::Right => {
+                        controls.movecam = true;
+                    }
+                    MouseButton::Left => {
+                        let camera_pos = sdl.camera.pos();
+                        let map_x = ((camera_pos.x as f32
+                            + controls.mouse.x as f32 / sdl.camera.zoom)
+                            / 10.0) as i32;
+                        let map_y = ((camera_pos.y as f32
+                            + controls.mouse.y as f32 / sdl.camera.zoom)
+                            / 10.0) as i32;
+
+                        let state = self.state.read().unwrap();
+
+                        controls.drawing = Some(!state.data.get(map_x, map_y));
+                    }
+                    _ => {}
+                },
+                Event::MouseButtonUp { mouse_btn, .. } => match mouse_btn {
+                    MouseButton::Right => {
+                        controls.movecam = false;
+                    }
+                    MouseButton::Left => {
+                        controls.drawing = None;
+                    }
+                    _ => {}
+                },
                 Event::KeyDown {
                     keycode: Some(keycode),
                     ..
@@ -166,17 +183,32 @@ impl Game {
                     Keycode::Plus => {
                         if controls.speed > 0 {
                             controls.speed -= 1;
-                            println!("New speed {:?}", controls.speed());
+                            println!("New speed: {:?}", controls.speed());
                         }
                     }
                     Keycode::Minus => {
-                        if controls.speed < 4 {
+                        if controls.speed < SPEEDS.len() - 1 {
                             controls.speed += 1;
-                            println!("New speed {:?}", controls.speed());
+                            println!("New speed: {:?}", controls.speed());
                         }
                     }
                     _ => {}
                 },
+                _ => {}
+            }
+
+            match controls.drawing {
+                Some(draw) => {
+                    let mut state = self.state.write().unwrap();
+                    let camera_pos = sdl.camera.pos();
+                    let map_x = ((camera_pos.x as f32 + controls.mouse.x as f32 / sdl.camera.zoom)
+                        / 10.0) as i32;
+                    let map_y = ((camera_pos.y as f32 + controls.mouse.y as f32 / sdl.camera.zoom)
+                        / 10.0) as i32;
+
+                    let data = Arc::get_mut(&mut state.data).unwrap();
+                    data.set(map_x, map_y, draw);
+                }
                 _ => {}
             }
         }

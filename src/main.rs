@@ -26,7 +26,8 @@ pub fn main() {
     println!("Target fps: {}", framerate);
 
     let mut fps = FPSManager::new();
-    fps.set_framerate(framerate as u32).unwrap();
+    // fps.set_framerate(framerate as u32).unwrap();
+    fps.set_framerate(30).unwrap();
 
     let game = Arc::new(Game::new(1000, 1000));
     let game_clone = game.clone();
@@ -49,7 +50,9 @@ pub fn main() {
                 let timer_tick = Instant::now();
                 game.tick();
                 let time_tick = timer_tick.elapsed().as_millis();
-                println!("Tick took {}", time_tick);
+
+                // println!("Tick took {}", time_tick);
+
                 game.finalize_tick();
             }
 
@@ -75,7 +78,8 @@ pub fn main() {
         let timer = Instant::now();
         game.draw(&mut sdl);
         let time_draw = timer.elapsed().as_millis();
-        println!("Draw took {}", time_draw);
+
+        // println!("Draw took {}", time_draw);
 
         game.handle_events(&mut sdl);
 

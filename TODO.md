@@ -1,14 +1,15 @@
 
 # TODO
-* draw life
 * fix accidental toroidness
 * sparse matrix
+  * infinite map
 * multi thread ticks
 * gtk window
 
 
 
 # DONE
+* draw life
 * lockstep option
 * fps lock, monitor based
 * efficient render

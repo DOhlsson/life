@@ -14,7 +14,6 @@ pub struct MySdl {
     pub scale: f32,
 }
 
-// TODO: invert pos
 pub struct Camera {
     pos: Point,
     float_pos: (f32, f32),
