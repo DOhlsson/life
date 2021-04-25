@@ -35,3 +35,41 @@ impl LifeMatrix {
         return self.data.iter();
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn create_empty() {
+        let mut matrix = LifeMatrix::new(8, 8);
+
+        assert_eq!(matrix.get(0, 0), false);
+        assert_eq!(matrix.get(7, 6), false);
+    }
+
+    #[test]
+    fn can_set() {
+        let mut matrix = LifeMatrix::new(8, 8);
+
+        matrix.set(0, 0, true);
+        matrix.set(6, 7, true);
+
+        assert_eq!(matrix.get(0, 0), true);
+        assert_eq!(matrix.get(6, 7), true);
+        assert_eq!(matrix.get(7, 6), false);
+    }
+
+    #[test]
+    fn get_iter() {
+        let mut matrix = LifeMatrix::new(8, 8);
+
+        matrix.set(1, 2, true);
+        matrix.set(3, 4, true);
+        matrix.set(5, 6, true);
+
+        let res: i32 = matrix.get_iter().map(|x| {if *x { 1 } else { 0 }}).sum();
+
+        assert_eq!(res, 3);
+    }
+}
