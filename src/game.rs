@@ -57,7 +57,6 @@ impl Controls {
 
 impl Game {
     pub fn new(cols: usize, rows: usize) -> Game {
-        let mut rng = thread_rng();
         let mut data = Matrix::new(cols, rows);
         let next_data = Matrix::new(cols, rows);
 
@@ -66,16 +65,9 @@ impl Game {
             paused: false,
             movecam: false,
             drawing: None,
-            speed: 0,
+            speed: 1,
             mouse: Point::new(0, 0),
         };
-
-        // Mapgen
-        for x in 0..cols {
-            for y in 0..rows {
-                data.set(x as i32, y as i32, rng.gen_bool(0.5));
-            }
-        }
 
         let state = GameState {
             data: Arc::new(data),
@@ -88,6 +80,18 @@ impl Game {
             state: RwLock::new(state),
             controls: Mutex::new(controls),
         };
+    }
+
+    pub fn randomize(&mut self) {
+        let mut rng = thread_rng();
+
+        let mut state = self.state.write().unwrap();
+        let data = Arc::get_mut(&mut state.data).unwrap();
+        for x in 0..self.cols {
+            for y in 0..self.rows {
+                data.set(x as i32, y as i32, rng.gen_bool(0.5));
+            }
+        }
     }
 
     pub fn controls_as_mutex(&self) -> MutexGuard<'_, Controls> {

@@ -18,13 +18,12 @@ impl Matrix {
     }
 
     pub fn get(&self, x: i32, y: i32) -> bool {
-        let i = x + y * self.cols as i32;
-
-        if i < 0 || i as usize >= self.size {
+        if x < 0 || x >= self.cols as i32 || y < 0 || y >= self.rows as i32 {
             return false;
-        } else {
-            return self.data[i as usize];
         }
+
+        let i = x + y * self.cols as i32;
+        return self.data[i as usize];
     }
 
     pub fn set(&mut self, x: i32, y: i32, val: bool) {

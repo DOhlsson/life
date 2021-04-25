@@ -1,10 +1,11 @@
 
 # TODO
-* fix accidental toroidness
 * sparse matrix
   * infinite map
 * multi thread ticks
-* gtk window
+* read files
+* hashlife
+* gui controls
 
 
 
