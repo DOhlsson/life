@@ -1,7 +1,8 @@
 
 # TODO
-* sparse matrix
-  * infinite map
+* quadtree
+* matrix as 8x8 u64
+* growable quadtree, infinite map
 * multi thread ticks
 * read files
 * hashlife

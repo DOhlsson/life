@@ -1,15 +1,15 @@
-pub struct Matrix {
+pub struct LifeMatrix {
     cols: usize,
     rows: usize,
     size: usize,
     data: Vec<bool>,
 }
 
-impl Matrix {
-    pub fn new(cols: usize, rows: usize) -> Matrix {
+impl LifeMatrix {
+    pub fn new(cols: usize, rows: usize) -> LifeMatrix {
         let size = cols * rows;
 
-        return Matrix {
+        return LifeMatrix {
             cols,
             rows,
             size,

@@ -1,7 +1,7 @@
 extern crate sdl2;
 
 mod game;
-mod matrix;
+mod life_matrix;
 mod mysdl;
 
 use crate::mysdl::MySdl;

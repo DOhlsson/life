@@ -1,4 +1,4 @@
-use crate::matrix::Matrix;
+use crate::life_matrix::LifeMatrix;
 
 use crate::mysdl::MySdl;
 use rand::{thread_rng, Rng};
@@ -28,8 +28,8 @@ pub struct Game {
 }
 
 pub struct GameState {
-    data: Arc<Matrix>,
-    next_data: Mutex<Arc<Matrix>>,
+    data: Arc<LifeMatrix>,
+    next_data: Mutex<Arc<LifeMatrix>>,
 }
 
 #[derive(Copy, Clone)]
@@ -57,8 +57,8 @@ impl Controls {
 
 impl Game {
     pub fn new(cols: usize, rows: usize) -> Game {
-        let mut data = Matrix::new(cols, rows);
-        let next_data = Matrix::new(cols, rows);
+        let mut data = LifeMatrix::new(cols, rows);
+        let next_data = LifeMatrix::new(cols, rows);
 
         let controls = Controls {
             running: true,
@@ -262,6 +262,7 @@ impl Game {
                 let x = x as i32;
                 let y = y as i32;
 
+                // TODO calculate neighbors as a function of LifeMatrix
                 let mut sum = 0;
                 let alive = state.data.get(x, y);
 
