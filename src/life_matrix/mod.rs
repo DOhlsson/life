@@ -1,3 +1,8 @@
+mod matrix;
+mod quadtree;
+
+use quadtree::QuadTreeMatrix;
+
 pub struct LifeMatrix {
     cols: usize,
     rows: usize,
@@ -42,7 +47,7 @@ mod tests {
 
     #[test]
     fn create_empty() {
-        let mut matrix = LifeMatrix::new(8, 8);
+        let matrix = LifeMatrix::new(8, 8);
 
         assert_eq!(matrix.get(0, 0), false);
         assert_eq!(matrix.get(7, 6), false);
@@ -68,7 +73,7 @@ mod tests {
         matrix.set(3, 4, true);
         matrix.set(5, 6, true);
 
-        let res: i32 = matrix.get_iter().map(|x| {if *x { 1 } else { 0 }}).sum();
+        let res: i32 = matrix.get_iter().map(|x| if *x { 1 } else { 0 }).sum();
 
         assert_eq!(res, 3);
     }

@@ -1,6 +1,5 @@
-use crate::life_matrix::LifeMatrix;
-
-use crate::mysdl::MySdl;
+use super::life_matrix::LifeMatrix;
+use super::mysdl::MySdl;
 use rand::{thread_rng, Rng};
 use sdl2::event::Event;
 use sdl2::event::WindowEvent;

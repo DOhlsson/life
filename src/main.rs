@@ -4,9 +4,9 @@ mod game;
 mod life_matrix;
 mod mysdl;
 
-use crate::mysdl::MySdl;
 use game::Game;
 use game::Speed;
+use mysdl::MySdl;
 use sdl2::gfx::framerate::FPSManager;
 use std::sync::{Arc, Barrier};
 use std::thread;
